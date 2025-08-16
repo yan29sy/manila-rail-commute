@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manila Rail Commute</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+      background-color: #f4f4f4;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    #route, #status {
+      margin-top: 15px;
+      padding: 10px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <h2>Manila Rail Commute</h2>
+  <label for="start">Start Station:</label>
+  <select id="start">
+    <option value="">Select Start Station</option>
+  </select>
+  <label for="dest">Destination Station:</label>
+  <select id="dest">
+    <option value="">Select Destination Station</option>
+  </select>
+  <button onclick="startTracking()">Start Tracking</button>
+  <div id="route"></div>
+  <div id="status"></div>
+
+  <script>
+    // Station data
+    const stations = {
+      'LRT1': {
+        'Unified Grand Central Station': { lat: 14.6565, lon: 121.0037 },
+        'Fernando Poe Jr.': { lat: 14.6575, lon: 121.0190 },
+        'Balintawak': { lat: 14.6567, lon: 121.0053 },
+        'Monumento': { lat: 14.6542, lon: 120.9835 },
+        '5th Avenue': { lat: 14.6462, lon: 120.9803 },
+        'R. Papa': { lat: 14.6362, lon: 120.9798 },
+        'Abad Santos': { lat: 14.6300, lon: 120.9793 },
+        'Blumentritt': { lat: 14.6227, lon: 120.9829 },
+        'Tayuman': { lat: 14.6170, lon: 120.9822 },
+        'Bambang': { lat: 14.6115, lon: 120.9820 },
+        'Doroteo Jose': { lat: 14.6053, lon: 120.9810 },
+        'Carriedo': { lat: 14.5991, lon: 120.9814 },
+        'Central Terminal': { lat: 14.5930, lon: 120.9812 },
+        'United Nations': { lat: 14.5821, lon: 120.9846 },
+        'Pedro Gil': { lat: 14.5765, lon: 120.9882 },
+        'Quirino': { lat: 14.5703, lon: 120.9915 },
+        'Vito Cruz': { lat: 14.5648, lon: 120.9932 },
+        'Gil Puyat': { lat: 14.5542, lon: 120.9971 },
+        'Libertad': { lat: 14.5479, lon: 121.0001 },
+        'EDSA': { lat: 14.5366, lon: 121.0004 },
+        'Baclaran': { lat: 14.5075, lon: 120.9964 },
+        'Redemptorist–Aseana': { lat: 14.5030, lon: 120.9950 },
+        'MIA Road': { lat: 14.5000, lon: 120.9940 },
+        'PITX': { lat: 14.5100, lon: 120.9910 },
+        'Ninoy Aquino Avenue': { lat: 14.4986, lon: 120.9944 },
+        'Dr. Santos': { lat: 14.4960, lon: 120.9935 },
+        'Las Piñas': { lat: 14.4940, lon: 120.9925 },
+        'Zapote': { lat: 14.4920, lon: 120.9915 },
+        'Talaba': { lat: 14.4900, lon: 120.9905 },
+        'Niog': { lat: 14.4880, lon: 120.9895 }
+      },
+      'LRT2': {
+        'Antipolo': { lat: 14.6250, lon: 121.1200 },
+        'Marikina–Pasig': { lat: 14.6200, lon: 121.1000 },
+        'Santolan': { lat: 14.6104, lon: 121.0900 },
+        'Katipunan': { lat: 14.6294, lon: 121.0740 },
+        'Anonas': { lat: 14.6290, lon: 121.0650 },
+        'Araneta Center–Cubao': { lat: 14.6223, lon: 121.0526 },
+        'Betty Go-Belmonte': { lat: 14.6180, lon: 121.0470 },
+        'Gilmore': { lat: 14.6137, lon: 121.0371 },
+        'J. Ruiz': { lat: 14.6100, lon: 121.0300 },
+        'V. Mapa': { lat: 14.6053, lon: 121.0200 },
+        'Pureza': { lat: 14.6020, lon: 121.0100 },
+        'Legarda': { lat: 14.6000, lon: 121.0030 },
+        'Recto': { lat: 14.6033, lon: 120.9750 },
+        'Tutuban': { lat: 14.6110, lon: 120.9720 },
+        'Divisoria': { lat: 14.6090, lon: 120.9700 },
+        'Pier 4': { lat: 14.6070, lon: 120.9680 }
+      },
+      'MRT3': {
+        'North Avenue': { lat: 14.6514, lon: 121.0329 },
+        'Quezon Avenue': { lat: 14.6433, lon: 121.0377 },
+        'GMA–Kamuning': { lat: 14.6363, lon: 121.0424 },
+        'Araneta Center–Cubao': { lat: 14.6195, lon: 121.0513 },
+        'Santolan–Annapolis': { lat: 14.6085, lon: 121.0567 },
+        'Ortigas': { lat: 14.5885, lon: 121.0572 },
+        'Shaw Boulevard': { lat: 14.5816, lon: 121.0537 },
+        'Boni': { lat: 14.5732, lon: 121.0480 },
+        'Guadalupe': { lat: 14.5673, lon: 121.0455 },
+        'Buendia': { lat: 14.5569, lon: 121.0336 },
+        'Ayala': { lat: 14.5493, lon: 121.0279 },
+        'Magallanes': { lat: 14.5410, lon: 121.0195 },
+        'Taft Avenue': { lat: 14.5375, lon: 121.0014 }
+      }
+    };
+
+    // Graph: adjacency list
+    const graph = {
+      // LRT1
+      'Unified Grand Central Station': ['Fernando Poe Jr.'],
+      'Fernando Poe Jr.': ['Unified Grand Central Station', 'Balintawak'],
+      'Balintawak': ['Fernando Poe Jr.', 'Monumento'],
+      'Monumento': ['Balintawak', '5th Avenue'],
+      '5th Avenue': ['Monumento', 'R. Papa'],
+      'R. Papa': ['5th Avenue', 'Abad Santos'],
+      'Abad Santos': ['R. Papa', 'Blumentritt'],
+      'Blumentritt': ['Abad Santos', 'Tayuman'],
+      'Tayuman': ['Blumentritt', 'Bambang'],
+      'Bambang': ['Tayuman', 'Doroteo Jose'],
+      'Doroteo Jose': ['Bambang', 'Carriedo', 'Recto'], // Transfer to LRT2
+      'Carriedo': ['Doroteo Jose', 'Central Terminal'],
+      'Central Terminal': ['Carriedo', 'United Nations'],
+      'United Nations': ['Central Terminal', 'Pedro Gil'],
+      'Pedro Gil': ['United Nations', 'Quirino'],
+      'Quirino': ['Pedro Gil', 'Vito Cruz'],
+      'Vito Cruz': ['Quirino', 'Gil Puyat'],
+      'Gil Puyat': ['Vito Cruz', 'Libertad'],
+      'Libertad': ['Gil Puyat', 'EDSA'],
+      'EDSA': ['Libertad', 'Baclaran', 'Taft Avenue'], // Transfer to MRT3
+      'Baclaran': ['EDSA', 'Redemptorist–Aseana'],
+      'Redemptorist–Aseana': ['Baclaran', 'MIA Road'],
+      'MIA Road': ['Redemptorist–Aseana', 'PITX'],
+      'PITX': ['MIA Road', 'Ninoy Aquino Avenue'],
+      'Ninoy Aquino Avenue': ['PITX', 'Dr. Santos'],
+      'Dr. Santos': ['Ninoy Aquino Avenue', 'Las Piñas'],
+      'Las Piñas': ['Dr. Santos', 'Zapote'],
+      'Zapote': ['Las Piñas', 'Talaba'],
+      'Talaba': ['Zapote', 'Niog'],
+      'Niog': ['Talaba'],
+      // LRT2
+      'Antipolo': ['Marikina–Pasig'],
+      'Marikina–Pasig': ['Antipolo', 'Santolan'],
+      'Santolan': ['Marikina–Pasig', 'Katipunan'],
+      'Katipunan': ['Santolan', 'Anonas'],
+      'Anonas': ['Katipunan', 'Araneta Center–Cubao'],
+      'Araneta Center–Cubao': ['Anonas', 'Betty Go-Belmonte', 'Araneta Center–Cubao'], // Transfer to MRT3
+      'Betty Go-Belmonte': ['Araneta Center–Cubao', 'Gilmore'],
+      'Gilmore': ['Betty Go-Belmonte', 'J. Ruiz'],
+      'J. Ruiz': ['Gilmore', 'V. Mapa'],
+      'V. Mapa': ['J. Ruiz', 'Pureza'],
+      'Pureza': ['V. Mapa', 'Legarda'],
+      'Legarda': ['Pureza', 'Recto'],
+      'Recto': ['Legarda', 'Tutuban', 'Doroteo Jose'], // Transfer to LRT1
+      'Tutuban': ['Recto', 'Divisoria'],
+      'Divisoria': ['Tutuban', 'Pier 4'],
+      'Pier 4': ['Divisoria'],
+      // MRT3
+      'North Avenue': ['Quezon Avenue'],
+      'Quezon Avenue': ['North Avenue', 'GMA–Kamuning'],
+      'GMA–Kamuning': ['Quezon Avenue', 'Araneta Center–Cubao'],
+      'Araneta Center–Cubao': ['GMA–Kamuning', 'Santolan–Annapolis', 'Araneta Center–Cubao'], // Transfer to LRT2
+      'Santolan–Annapolis': ['Araneta Center–Cubao', 'Ortigas'],
+      'Ortigas': ['Santolan–Annapolis', 'Shaw Boulevard'],
+      'Shaw Boulevard': ['Ortigas', 'Boni'],
+      'Boni': ['Shaw Boulevard', 'Guadalupe'],
+      'Guadalupe': ['Boni', 'Buendia'],
+      'Buendia': ['Guadalupe', 'Ayala'],
+      'Ayala': ['Buendia', 'Magallanes'],
+      'Magallanes': ['Ayala', 'Taft Avenue'],
+      'Taft Avenue': ['Magallanes', 'EDSA'] // Transfer to LRT1
+    };
+
+    // Populate dropdowns
+    const allStations = [...new Set(Object.values(stations).flatMap(line => Object.keys(line)))].sort();
+    const startSelect = document.getElementById('start');
+    const destSelect = document.getElementById('dest');
+    allStations.forEach(station => {
+      const option1 = document.createElement('option');
+      option1.value = station;
+      option1.text = station;
+      startSelect.appendChild(option1);
+      const option2 = document.createElement('option');
+      option2.value = station;
+      option2.text = station;
+      destSelect.appendChild(option2);
+    });
+
+    // BFS for shortest path
+    function findRoute(start, dest) {
+      const queue = [[start]];
+      const visited = new Set();
+      while (queue.length) {
+        const path = queue.shift();
+        const node = path[path.length - 1];
+        if (node === dest) return path;
+        if (!visited.has(node)) {
+          visited.add(node);
+          for (const next of (graph[node] || [])) {
+            queue.push([...path, next]);
+          }
+        }
+      }
+      return [];
+    }
+
+    // Haversine distance (km)
+    function haversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth radius in km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    // Find closest station
+    function findClosestStation(lat, lon) {
+      let minDist = Infinity;
+      let closest = null;
+      for (const line in stations) {
+        for (const station in stations[line]) {
+          const { lat: sLat, lon: sLon } = stations[line][station];
+          const dist = haversineDistance(lat, lon, sLat, sLon);
+          if (dist < minDist) {
+            minDist = dist;
+            closest = station;
+          }
+        }
+      }
+      return { station: closest, distance: minDist };
+    }
+
+    // Start tracking
+    function startTracking() {
+      const start = document.getElementById('start').value;
+      const dest = document.getElementById('dest').value;
+      if (!start || !dest || !graph[start] || !graph[dest]) {
+        alert('Please select valid start and destination stations');
+        return;
+      }
+
+      const route = findRoute(start, dest);
+      if (!route.length) {
+        alert('No route found between the stations');
+        return;
+      }
+      document.getElementById('route').innerText = `Route: ${route.join(' → ')}`;
+
+      if (!navigator.geolocation) {
+        alert('Geolocation not supported by your browser');
+        return;
+      }
+      navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const { station, distance } = findClosestStation(latitude, longitude);
+          document.getElementById('status').innerText = `Current Station: ${station} (${distance.toFixed(2)} km away)`;
+          if (station === dest && distance < 0.5) {
+            alert(`You are near your destination: ${dest}!`);
+          }
+        },
+        (error) => {
+          document.getElementById('status').innerText = 'Location error: Please enable GPS';
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+  </script>
+</body>
+</html>
